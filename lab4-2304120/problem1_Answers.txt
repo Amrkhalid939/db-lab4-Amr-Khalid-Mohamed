@@ -5,7 +5,7 @@
 =====================================================================
 How this file was made: problem1_DDL.sql and problem1_DML.sql were run first,
 then every statement below was typed in one client session
-(mysql -u root -p company) in this order. The output under each statement is
+(MySQL 8.0, mysql -u root -p company) in this order. The output under each statement is
 what the server printed. The questions run one after another, so the data
 changed by Q1.1-Q1.3 is the data searched in Q1.4-Q1.12.
 
@@ -44,7 +44,7 @@ mysql> SELECT * FROM project WHERE Pnumber = 30;
 Insert an employee whose Dno (99) does not exist:
 
 mysql> INSERT INTO employee (ssn, fname, lname, salary, super_ssn, Dno) VALUES ('999999999', 'Test', 'Person', 3000.00, NULL, 99);
-ERROR 1452: Cannot add or update a child row: a foreign key constraint fails (`company`.`employee`, CONSTRAINT `fk_employee_department` FOREIGN KEY (`Dno`) REFERENCES `department` (`Dnumber`))
+ERROR 1452 (23000): Cannot add or update a child row: a foreign key constraint fails (`company`.`employee`, CONSTRAINT `fk_employee_department` FOREIGN KEY (`Dno`) REFERENCES `department` (`Dnumber`))
 
 What happens: the INSERT is rejected with error 1452 because Dno is a foreign
 key to DEPARTMENT.Dnumber and there is no department 99 (referential
@@ -97,7 +97,7 @@ mysql> SELECT * FROM project WHERE Pnumber = 2;
 (c) Change the Dno of an employee to a department that does not exist (99):
 
 mysql> UPDATE employee SET Dno = 99 WHERE ssn = '777777777';
-ERROR 1452: Cannot add or update a child row: a foreign key constraint fails (`company`.`employee`, CONSTRAINT `fk_employee_department` FOREIGN KEY (`Dno`) REFERENCES `department` (`Dnumber`))
+ERROR 1452 (23000): Cannot add or update a child row: a foreign key constraint fails (`company`.`employee`, CONSTRAINT `fk_employee_department` FOREIGN KEY (`Dno`) REFERENCES `department` (`Dnumber`))
 
 What happens: the UPDATE is rejected with error 1452 (foreign key fails),
 exactly like the INSERT of Q1.1. The employee keeps Dno = 4:
@@ -123,7 +123,7 @@ Query OK, 1 row affected
 (b) Try to delete a department that still has employees (4 Administration):
 
 mysql> DELETE FROM department WHERE Dnumber = 4;
-ERROR 1451: Cannot delete or update a parent row: a foreign key constraint fails (`company`.`employee`, CONSTRAINT `fk_employee_department` FOREIGN KEY (`Dno`) REFERENCES `department` (`Dnumber`))
+ERROR 1451 (23000): Cannot delete or update a parent row: a foreign key constraint fails (`company`.`employee`, CONSTRAINT `fk_employee_department` FOREIGN KEY (`Dno`) REFERENCES `department` (`Dnumber`))
 
 What happens: error 1451. The rows of EMPLOYEE (and PROJECT) still refer to
 department 4, and the foreign keys use the default ON DELETE RESTRICT, so
@@ -167,6 +167,12 @@ mysql> SELECT * FROM department WHERE Dnumber = 4;
 1 row in set
 
 (c) DELETE without WHERE inside a transaction:
+Note for MySQL Workbench: Workbench turns on "safe updates", which refuses a
+DELETE without a WHERE on a key (Error 1175). Run SET SQL_SAFE_UPDATES = 0;
+first (the mysql command-line client does not need it).
+
+mysql> SET SQL_SAFE_UPDATES = 0;
+Query OK, 0 rows affected
 
 mysql> START TRANSACTION;
 Query OK, 0 rows affected

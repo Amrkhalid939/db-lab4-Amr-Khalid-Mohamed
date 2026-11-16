@@ -40,6 +40,19 @@ mysql -u root -p < problem2_DML.sql      # seed data
 mysql -u root -p < problem2_Queries.sql  # run every page query (F2.1 – F2.6)
 ```
 
+## Using MySQL Workbench instead of the command line
+
+All scripts also run in MySQL Workbench (tested on MySQL 8.0):
+
+1. **File → Open SQL Script…** and pick `problem1_DDL.sql`, then click the ⚡ **Execute** button
+   (runs the whole script). Do the same for `problem1_DML.sql`, `problem2_DDL.sql`,
+   `problem2_DML.sql` and `problem2_Queries.sql` — in this order.
+2. Click the 🔄 refresh icon in the **Schemas** panel to see `company` and `library`.
+3. To type the Q1.x queries, open a new query tab and run `USE company;` first.
+4. Workbench turns on **safe updates**, which refuses `DELETE`/`UPDATE` without a `WHERE`
+   on a key column (Error 1175). Only Q1.3(c) needs it off — run
+   `SET SQL_SAFE_UPDATES = 0;` before it.
+
 ## 3. Run the website
 
 Windows (PowerShell / VS Code terminal):
