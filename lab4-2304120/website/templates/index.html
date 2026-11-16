@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+  <h1>Library</h1>
+  <p class="muted">Search queries in SQL on the six-table library database (Lab 4).</p>
+  <div class="grid">
+    <a class="tile" href="{{ url_for('search') }}"><strong>F2.1 Search books</strong><span>Title keyword, price range and category</span></a>
+    <a class="tile" href="{{ url_for('catalogue') }}"><strong>F2.2 Catalogue</strong><span>Books with author, publisher and category names</span></a>
+    <a class="tile" href="{{ url_for('reports') }}"><strong>F2.3 Reports</strong><span>Counts, averages and totals</span></a>
+    <a class="tile" href="{{ url_for('loans') }}"><strong>F2.4 Loans</strong><span>Open loans, idle members and books</span></a>
+    <a class="tile" href="{{ url_for('most_borrowed') }}"><strong>F2.5 Most borrowed</strong><span>Top 3 books and top member</span></a>
+    <a class="tile" href="{{ url_for('authors') }}"><strong>F2.6 Authors and books</strong><span>Books per author, same-country pairs</span></a>
+  </div>
+{% endblock %}

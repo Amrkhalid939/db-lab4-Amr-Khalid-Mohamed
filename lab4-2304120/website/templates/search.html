@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% from "_table.html" import table %}
+{% block title %}Search books{% endblock %}
+{% block content %}
+  <h1>Search books</h1>
+  <p class="muted">Leave a field empty to ignore it. Results are sorted cheapest first (F2.1).</p>
+  <form class="card search" method="get" action="{{ url_for('search') }}">
+    <div class="field wide">
+      <label for="q">Title contains</label>
+      <input id="q" name="q" type="text" value="{{ form.q }}" placeholder="e.g. Harry">
+    </div>
+    <div class="field">
+      <label for="min_price">Min price</label>
+      <input id="min_price" name="min_price" type="number" step="0.01" min="0" value="{{ form.min_price }}">
+    </div>
+    <div class="field">
+      <label for="max_price">Max price</label>
+      <input id="max_price" name="max_price" type="number" step="0.01" min="0" value="{{ form.max_price }}">
+    </div>
+    <div class="field">
+      <label for="category">Category</label>
+      <select id="category" name="category">
+        <option value="">All categories</option>
+        {% for c in categories %}
+          <option value="{{ c.category_id }}" {{ 'selected' if form.category == c.category_id|string }}>{{ c.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="actions">
+      <button class="btn" type="submit">Search</button>
+      <a class="btn btn-ghost" href="{{ url_for('search') }}">Clear</a>
+    </div>
+  </form>
+
+  {% for e in errors %}<p class="alert">{{ e }}</p>{% endfor %}
+
+  {% if not errors %}
+    <section class="card">
+      {{ table(rows, "No book matches your search.") }}
+      <details>
+        <summary>SQL (prepared statement)</summary>
+        <pre>{{ sql }}</pre>
+        <p class="muted">Parameters: {{ params|map('string')|join(', ') }}</p>
+      </details>
+    </section>
+  {% endif %}
+{% endblock %}

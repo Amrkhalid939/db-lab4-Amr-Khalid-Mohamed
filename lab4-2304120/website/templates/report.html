@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% from "_table.html" import table %}
+{% block title %}{{ heading }}{% endblock %}
+{% block content %}
+  <h1>{{ heading }}</h1>
+  <p class="muted">{{ intro }}</p>
+  {% for s in sections %}
+    <section class="card">
+      <h2>{{ s.title }}</h2>
+      {{ table(s.rows) }}
+      <details><summary>SQL</summary><pre>{{ s.sql }}</pre></details>
+    </section>
+  {% endfor %}
+{% endblock %}

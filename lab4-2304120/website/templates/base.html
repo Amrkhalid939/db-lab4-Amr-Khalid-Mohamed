@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Library{% endblock %} · Library</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="{{ url_for('index') }}">📚 Library</a>
+    <nav class="nav">
+      {% set links = [('search', 'Search'), ('catalogue', 'Catalogue'), ('reports', 'Reports'),
+                      ('loans', 'Loans'), ('most_borrowed', 'Most borrowed'), ('authors', 'Authors')] %}
+      {% for endpoint, label in links %}
+        <a href="{{ url_for(endpoint) }}" class="{{ 'active' if request.endpoint == endpoint }}">{{ label }}</a>
+      {% endfor %}
+    </nav>
+  </header>
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="footer">DB Lab 4 · Amr Khalid Mohamed (2304120) · Seif Walid (2404028)</footer>
+</body>
+</html>

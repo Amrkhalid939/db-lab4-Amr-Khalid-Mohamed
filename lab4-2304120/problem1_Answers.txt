@@ -1,0 +1,410 @@
+=====================================================================
+ Lab 4 - Problem 1 : COMPANY database - Answers
+ Amr Khalid Mohamed - 2304120 | Seif Walid - 2404028
+ Introduction to Database Systems - Fall 2026
+=====================================================================
+How this file was made: problem1_DDL.sql and problem1_DML.sql were run first,
+then every statement below was typed in one client session
+(mysql -u root -p company) in this order. The output under each statement is
+what the server printed. The questions run one after another, so the data
+changed by Q1.1-Q1.3 is the data searched in Q1.4-Q1.12.
+
+---------------------------------------------------------------------
+ A. CHANGE THE DATA
+---------------------------------------------------------------------
+
+Q1.1 INSERT
+-----------
+New employee (Hana Mostafa) in the existing department 5 (Research):
+
+mysql> INSERT INTO employee (ssn, fname, lname, bdate, address, gender, salary, super_ssn, Dno) VALUES ('888888888', 'Hana', 'Mostafa', '1999-08-11', '15 Stanley St, Alexandria', 'F', 3200.00, '222222222', 5);
+Query OK, 1 row affected
+
+New project of the same department:
+
+mysql> INSERT INTO project (Pnumber, Pname, Plocation, Dno) VALUES (30, 'DataLake', 'Alexandria', 5);
+Query OK, 1 row affected
+
+mysql> SELECT * FROM employee WHERE ssn = '888888888';
++-----------+-------+---------+------------+---------------------------+--------+---------+-----------+-----+
+| ssn       | fname | lname   | bdate      | address                   | gender | salary  | super_ssn | Dno |
++-----------+-------+---------+------------+---------------------------+--------+---------+-----------+-----+
+| 888888888 | Hana  | Mostafa | 1999-08-11 | 15 Stanley St, Alexandria | F      | 3200.00 | 222222222 | 5   |
++-----------+-------+---------+------------+---------------------------+--------+---------+-----------+-----+
+1 row in set
+
+mysql> SELECT * FROM project WHERE Pnumber = 30;
++---------+----------+------------+-----+
+| Pnumber | Pname    | Plocation  | Dno |
++---------+----------+------------+-----+
+| 30      | DataLake | Alexandria | 5   |
++---------+----------+------------+-----+
+1 row in set
+
+Insert an employee whose Dno (99) does not exist:
+
+mysql> INSERT INTO employee (ssn, fname, lname, salary, super_ssn, Dno) VALUES ('999999999', 'Test', 'Person', 3000.00, NULL, 99);
+ERROR 1452: Cannot add or update a child row: a foreign key constraint fails (`company`.`employee`, CONSTRAINT `fk_employee_department` FOREIGN KEY (`Dno`) REFERENCES `department` (`Dnumber`))
+
+What happens: the INSERT is rejected with error 1452 because Dno is a foreign
+key to DEPARTMENT.Dnumber and there is no department 99 (referential
+integrity). No row is added to EMPLOYEE.
+
+Q1.2 UPDATE
+-----------
+(a) 10% raise for every employee of department 5 (Research):
+
+mysql> SELECT ssn, fname, lname, salary FROM employee WHERE Dno = 5;
++-----------+---------+---------+---------+
+| ssn       | fname   | lname   | salary  |
++-----------+---------+---------+---------+
+| 222222222 | Mona    | Ali     | 5500.00 |
+| 333333333 | Omar    | Samy    | 4000.00 |
+| 444444444 | Sara    | Adel    | 3500.00 |
+| 555555555 | Youssef | Nabil   | 2800.00 |
+| 888888888 | Hana    | Mostafa | 3200.00 |
++-----------+---------+---------+---------+
+5 rows in set
+
+mysql> UPDATE employee SET salary = salary * 1.10 WHERE Dno = 5;
+Query OK, 5 rows affected
+
+mysql> SELECT ssn, fname, lname, salary FROM employee WHERE Dno = 5;
++-----------+---------+---------+---------+
+| ssn       | fname   | lname   | salary  |
++-----------+---------+---------+---------+
+| 222222222 | Mona    | Ali     | 6050.00 |
+| 333333333 | Omar    | Samy    | 4400.00 |
+| 444444444 | Sara    | Adel    | 3850.00 |
+| 555555555 | Youssef | Nabil   | 3080.00 |
+| 888888888 | Hana    | Mostafa | 3520.00 |
++-----------+---------+---------+---------+
+5 rows in set
+
+(b) Change the location of project 2 (ProductY) from Cairo to Alexandria:
+
+mysql> UPDATE project SET Plocation = 'Alexandria' WHERE Pnumber = 2;
+Query OK, 1 row affected
+
+mysql> SELECT * FROM project WHERE Pnumber = 2;
++---------+----------+------------+-----+
+| Pnumber | Pname    | Plocation  | Dno |
++---------+----------+------------+-----+
+| 2       | ProductY | Alexandria | 5   |
++---------+----------+------------+-----+
+1 row in set
+
+(c) Change the Dno of an employee to a department that does not exist (99):
+
+mysql> UPDATE employee SET Dno = 99 WHERE ssn = '777777777';
+ERROR 1452: Cannot add or update a child row: a foreign key constraint fails (`company`.`employee`, CONSTRAINT `fk_employee_department` FOREIGN KEY (`Dno`) REFERENCES `department` (`Dnumber`))
+
+What happens: the UPDATE is rejected with error 1452 (foreign key fails),
+exactly like the INSERT of Q1.1. The employee keeps Dno = 4:
+
+mysql> SELECT ssn, fname, Dno FROM employee WHERE ssn = '777777777';
++-----------+-------+-----+
+| ssn       | fname | Dno |
++-----------+-------+-----+
+| 777777777 | Karim | 4   |
++-----------+-------+-----+
+1 row in set
+
+Q1.3 DELETE
+-----------
+(a) Delete one dependent and one WORKS_ON row:
+
+mysql> DELETE FROM dependent WHERE essn = '444444444' AND dependent_name = 'Ali';
+Query OK, 1 row affected
+
+mysql> DELETE FROM works_on WHERE essn = '222222222' AND Pno = 3;
+Query OK, 1 row affected
+
+(b) Try to delete a department that still has employees (4 Administration):
+
+mysql> DELETE FROM department WHERE Dnumber = 4;
+ERROR 1451: Cannot delete or update a parent row: a foreign key constraint fails (`company`.`employee`, CONSTRAINT `fk_employee_department` FOREIGN KEY (`Dno`) REFERENCES `department` (`Dnumber`))
+
+What happens: error 1451. The rows of EMPLOYEE (and PROJECT) still refer to
+department 4, and the foreign keys use the default ON DELETE RESTRICT, so
+MySQL refuses to delete the parent row while children point to it.
+
+Order to remove the department: first remove (or move) every row that refers
+to it, children before parents:
+  1. WORKS_ON rows of its projects       (they refer to PROJECT)
+  2. its PROJECT rows                    (they refer to DEPARTMENT)
+  3. its EMPLOYEE rows: move them to another department (UPDATE ... SET Dno)
+     - or delete them after deleting their WORKS_ON/DEPENDENT rows and
+     clearing the super_ssn / mgr_ssn values that point to them
+  4. finally the DEPARTMENT row itself.
+Demonstration inside a transaction (rolled back, so our data is kept for the
+next questions):
+
+mysql> START TRANSACTION;
+Query OK, 0 rows affected
+
+mysql> DELETE FROM works_on WHERE Pno IN (10, 20);
+Query OK, 2 rows affected
+
+mysql> DELETE FROM project WHERE Dno = 4;
+Query OK, 2 rows affected
+
+mysql> UPDATE employee SET Dno = 1 WHERE Dno = 4;
+Query OK, 2 rows affected
+
+mysql> DELETE FROM department WHERE Dnumber = 4;
+Query OK, 1 row affected
+
+mysql> ROLLBACK;
+Query OK, 0 rows affected
+
+mysql> SELECT * FROM department WHERE Dnumber = 4;
++---------+----------------+-----------+----------------+
+| Dnumber | Dname          | mgr_ssn   | mgr_start_date |
++---------+----------------+-----------+----------------+
+| 4       | Administration | 666666666 | 2019-01-01     |
++---------+----------------+-----------+----------------+
+1 row in set
+
+(c) DELETE without WHERE inside a transaction:
+
+mysql> START TRANSACTION;
+Query OK, 0 rows affected
+
+mysql> DELETE FROM dependent;
+Query OK, 3 rows affected
+
+mysql> SELECT * FROM dependent;
++------+----------------+--------+-------+--------------+
+| essn | dependent_name | gender | bdate | relationship |
++------+----------------+--------+-------+--------------+
+Empty set
+
+mysql> ROLLBACK;
+Query OK, 0 rows affected
+
+mysql> SELECT * FROM dependent;
++-----------+----------------+--------+------------+--------------+
+| essn      | dependent_name | gender | bdate      | relationship |
++-----------+----------------+--------+------------+--------------+
+| 111111111 | Mariam         | F      | 1978-12-01 | Spouse       |
+| 222222222 | Hany           | M      | 1980-10-14 | Spouse       |
+| 333333333 | Laila          | F      | 2018-04-05 | Daughter     |
++-----------+----------------+--------+------------+--------------+
+3 rows in set
+
+What did the delete remove? A DELETE without WHERE removes EVERY row of the
+table (here the 3 dependents left after Q1.3a); the SELECT inside the
+transaction shows an empty table.
+What did ROLLBACK do? It cancelled every change made since START TRANSACTION,
+so the 3 dependents came back. (Without START TRANSACTION, autocommit would
+have made the delete permanent.)
+
+---------------------------------------------------------------------
+ B. SEARCH THE DATA
+---------------------------------------------------------------------
+
+Q1.4 WHERE, DISTINCT
+--------------------
+(a) Employees earning between 3000 and 6000 who live in Alexandria, highest
+salary first:
+
+mysql> SELECT fname, lname, salary FROM employee WHERE salary BETWEEN 3000 AND 6000 AND address LIKE '%Alexandria%' ORDER BY salary DESC;
++---------+---------+---------+
+| fname   | lname   | salary  |
++---------+---------+---------+
+| Sara    | Adel    | 3850.00 |
+| Hana    | Mostafa | 3520.00 |
+| Youssef | Nabil   | 3080.00 |
++---------+---------+---------+
+3 rows in set
+
+(b) Employees that have no supervisor:
+
+mysql> SELECT ssn, fname, lname FROM employee WHERE super_ssn IS NULL;
++-----------+-------+--------+
+| ssn       | fname | lname  |
++-----------+-------+--------+
+| 111111111 | Ahmed | Hassan |
++-----------+-------+--------+
+1 row in set
+
+(c) Department numbers that have at least one employee, each written once:
+
+mysql> SELECT DISTINCT Dno FROM employee ORDER BY Dno;
++-----+
+| Dno |
++-----+
+| 1   |
+| 4   |
+| 5   |
++-----+
+3 rows in set
+
+Q1.5 Aggregation
+----------------
+
+mysql> SELECT COUNT(*) AS employees, SUM(salary) AS total_salary, AVG(salary) AS average_salary, MIN(salary) AS smallest_salary, MAX(salary) AS largest_salary FROM employee;
++-----------+--------------+----------------+-----------------+----------------+
+| employees | total_salary | average_salary | smallest_salary | largest_salary |
++-----------+--------------+----------------+-----------------+----------------+
+| 8         | 37200.00     | 4650.000000    | 2500.00         | 9000.00        |
++-----------+--------------+----------------+-----------------+----------------+
+1 row in set
+
+Q1.6 GROUP BY
+-------------
+
+mysql> SELECT Dno, COUNT(*) AS employees, AVG(salary) AS average_salary FROM employee GROUP BY Dno;
++-----+-----------+----------------+
+| Dno | employees | average_salary |
++-----+-----------+----------------+
+| 1   | 1         | 9000.000000    |
+| 4   | 2         | 3650.000000    |
+| 5   | 5         | 4180.000000    |
++-----+-----------+----------------+
+3 rows in set
+
+Q1.7 HAVING
+-----------
+(a) Departments with more than 2 employees:
+
+mysql> SELECT Dno, COUNT(*) AS employees FROM employee GROUP BY Dno HAVING COUNT(*) > 2;
++-----+-----------+
+| Dno | employees |
++-----+-----------+
+| 5   | 5         |
++-----+-----------+
+1 row in set
+
+(b) Same, counting only the employees whose salary is above 3000:
+
+mysql> SELECT Dno, COUNT(*) AS employees FROM employee WHERE salary > 3000 GROUP BY Dno HAVING COUNT(*) > 2;
++-----+-----------+
+| Dno | employees |
++-----+-----------+
+| 5   | 5         |
++-----+-----------+
+1 row in set
+
+(Same result as (a): after the 10% raise of Q1.2 all 5 Research employees
+earn more than 3000, while Administration keeps only 1 such employee.)
+
+WHERE vs HAVING: WHERE filters individual rows before they are grouped (so it
+cannot use aggregate functions), while HAVING filters whole groups after
+GROUP BY, using aggregate values such as COUNT(*).
+
+Q1.8 JOIN
+---------
+
+mysql> SELECT CONCAT(e.fname, ' ', e.lname) AS full_name, d.Dname FROM employee e JOIN department d ON e.Dno = d.Dnumber ORDER BY d.Dname, full_name;
++---------------+----------------+
+| full_name     | Dname          |
++---------------+----------------+
+| Karim Fathy   | Administration |
+| Nour Tarek    | Administration |
+| Ahmed Hassan  | Headquarters   |
+| Hana Mostafa  | Research       |
+| Mona Ali      | Research       |
+| Omar Samy     | Research       |
+| Sara Adel     | Research       |
+| Youssef Nabil | Research       |
++---------------+----------------+
+8 rows in set
+
+Q1.9 JOIN of three tables
+-------------------------
+
+mysql> SELECT e.lname, p.Pname, w.hours FROM works_on w JOIN employee e ON w.essn = e.ssn JOIN project p ON w.Pno = p.Pnumber ORDER BY p.Pname, e.lname;
++--------+-----------------+-------+
+| lname  | Pname           | hours |
++--------+-----------------+-------+
+| Fathy  | Computerization | 10.0  |
+| Tarek  | Computerization | 25.0  |
+| Adel   | ProductX        | 15.0  |
+| Ali    | ProductX        | 10.0  |
+| Samy   | ProductX        | 20.0  |
+| Nabil  | ProductY        | 12.0  |
+| Samy   | ProductY        | 10.0  |
+| Hassan | Reorganization  | 8.0   |
++--------+-----------------+-------+
+8 rows in set
+
+Q1.10 LEFT JOIN
+---------------
+(a) Every department with its number of employees, including 0:
+
+mysql> SELECT d.Dnumber, d.Dname, COUNT(e.ssn) AS employees FROM department d LEFT JOIN employee e ON e.Dno = d.Dnumber GROUP BY d.Dnumber, d.Dname ORDER BY d.Dnumber;
++---------+----------------+-----------+
+| Dnumber | Dname          | employees |
++---------+----------------+-----------+
+| 1       | Headquarters   | 1         |
+| 4       | Administration | 2         |
+| 5       | Research       | 5         |
+| 6       | Marketing      | 0         |
++---------+----------------+-----------+
+4 rows in set
+
+(COUNT(e.ssn) and not COUNT(*): for Marketing the LEFT JOIN makes one row with
+e.ssn = NULL, which COUNT(e.ssn) does not count.)
+
+(b) Projects that nobody works on:
+
+mysql> SELECT p.Pnumber, p.Pname FROM project p LEFT JOIN works_on w ON w.Pno = p.Pnumber WHERE w.Pno IS NULL;
++---------+-------------+
+| Pnumber | Pname       |
++---------+-------------+
+| 30      | DataLake    |
+| 20      | Newbenefits |
++---------+-------------+
+2 rows in set
+
+Q1.11 Self join
+---------------
+Every employee with the name of his or her supervisor:
+
+mysql> SELECT CONCAT(e.fname, ' ', e.lname) AS employee, CONCAT(s.fname, ' ', s.lname) AS supervisor FROM employee e JOIN employee s ON e.super_ssn = s.ssn ORDER BY supervisor, employee;
++---------------+--------------+
+| employee      | supervisor   |
++---------------+--------------+
+| Mona Ali      | Ahmed Hassan |
+| Nour Tarek    | Ahmed Hassan |
+| Hana Mostafa  | Mona Ali     |
+| Omar Samy     | Mona Ali     |
+| Sara Adel     | Mona Ali     |
+| Youssef Nabil | Mona Ali     |
+| Karim Fathy   | Nour Tarek   |
++---------------+--------------+
+7 rows in set
+
+(Ahmed Hassan is not listed because he has no supervisor; with LEFT JOIN he
+would appear with supervisor NULL:)
+
+mysql> SELECT CONCAT(e.fname, ' ', e.lname) AS employee, CONCAT(s.fname, ' ', s.lname) AS supervisor FROM employee e LEFT JOIN employee s ON e.super_ssn = s.ssn ORDER BY e.ssn;
++---------------+--------------+
+| employee      | supervisor   |
++---------------+--------------+
+| Ahmed Hassan  | NULL         |
+| Mona Ali      | Ahmed Hassan |
+| Omar Samy     | Mona Ali     |
+| Sara Adel     | Mona Ali     |
+| Youssef Nabil | Mona Ali     |
+| Nour Tarek    | Ahmed Hassan |
+| Karim Fathy   | Nour Tarek   |
+| Hana Mostafa  | Mona Ali     |
++---------------+--------------+
+8 rows in set
+
+Q1.12 JOIN + GROUP BY + HAVING
+------------------------------
+Projects with more than 20 total hours, largest total first:
+
+mysql> SELECT p.Pname, SUM(w.hours) AS total_hours FROM project p JOIN works_on w ON w.Pno = p.Pnumber GROUP BY p.Pnumber, p.Pname HAVING SUM(w.hours) > 20 ORDER BY total_hours DESC;
++-----------------+-------------+
+| Pname           | total_hours |
++-----------------+-------------+
+| ProductX        | 45.0        |
+| Computerization | 35.0        |
+| ProductY        | 22.0        |
++-----------------+-------------+
+3 rows in set

@@ -1,0 +1,17 @@
+{% macro table(rows, empty="No rows.") %}
+  {% if rows %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr>{% for col in rows[0].keys() %}<th>{{ col.replace('_', ' ') }}</th>{% endfor %}</tr></thead>
+        <tbody>
+          {% for row in rows %}
+            <tr>{% for v in row.values() %}<td>{{ '—' if v is none else v }}</td>{% endfor %}</tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="count">{{ rows|length }} row{{ '' if rows|length == 1 else 's' }}</p>
+  {% else %}
+    <p class="empty">{{ empty }}</p>
+  {% endif %}
+{% endmacro %}
